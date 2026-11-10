@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HeatLoop prototype</title>
+<meta name="description" content="HeatLoop finances data center heat reuse. Clickable prototype with example data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d1524; --panel:#141f33; --line:#26354f; --ink:#f3f5f9; --mute:#93a4bd;
+    --accent:#f0834a; --sky:#6fb3e8;
+    --screen:#f1f3f7; --card:#fff; --edge:#e1e6ee; --text:#172033; --sub:#5d687c; --faint:#8a94a6;
+    --navy:#141c2e; --blue:#2f7fb8; --green:#1d7a4c; --amber:#b4610c; --red:#cf3f36;
+    --sans:Inter,"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.4;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+  button,input{font:inherit}
+  .wrap{max-width:1140px;margin:0 auto;padding:36px 20px 48px}
+
+  /* page header */
+  .eyebrow{font-family:var(--mono);letter-spacing:.2em;font-size:11.5px;color:var(--accent);text-transform:uppercase}
+  h1{font-size:clamp(23px,3.2vw,34px);font-weight:700;margin:8px 0 8px;line-height:1.15;letter-spacing:-.015em;max-width:760px}
+  .lead{color:var(--mute);margin:0;max-width:640px;font-size:15px}
+  .head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:28px}
+  .pill{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--line);color:var(--mute);border-radius:999px;padding:6px 12px;white-space:nowrap}
+
+  /* mobile tabs */
+  .tabs{display:none;gap:6px;position:sticky;top:0;background:var(--bg);padding:10px 0;margin-bottom:6px;z-index:5}
+  .tabs button{flex:1;background:var(--panel);color:var(--mute);border:1px solid var(--line);border-radius:10px;padding:10px 4px;font-size:13px;font-weight:500;cursor:pointer}
+  .tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#1d1206;font-weight:600}
+
+  /* three screens */
+  .phones{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;align-items:stretch}
+  .col{display:flex;flex-direction:column;min-width:0}
+  .who{display:flex;align-items:center;gap:9px;margin:0 0 12px 6px;font-size:13.5px;color:var(--mute)}
+  .who i{font-style:normal;font-family:var(--mono);font-size:11.5px;width:22px;height:22px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;color:var(--ink)}
+  .col.active .who i{background:var(--accent);border-color:var(--accent);color:#1d1206}
+  .phone{flex:1;background:var(--screen);color:var(--text);border:7px solid #24334d;border-radius:36px;padding:16px 16px 16px;display:flex;flex-direction:column;box-shadow:0 20px 44px rgba(0,0,0,.35);transition:border-color .25s}
+  .col.active .phone{border-color:#3b5279}
+  .appbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .logo{font-weight:700;font-size:13px;letter-spacing:-.01em;display:flex;align-items:center;gap:6px}
+  .logo::before{content:"";width:9px;height:9px;border-radius:50%;border:2.5px solid var(--accent)}
+  .tag{font-size:11px;color:var(--sub);background:#e4e8ef;border-radius:999px;padding:3px 9px}
+  .tag.live{background:#dff0e7;color:var(--green);font-weight:600}
+  .phone h2{font-size:20px;font-weight:700;margin:0;letter-spacing:-.01em}
+  .phone .sub{color:var(--sub);font-size:13px;margin:2px 0 4px}
+
+  /* inputs */
+  .inp{margin-top:12px}
+  .inp .top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .inp label{font-size:13px;color:var(--sub)}
+  .field{display:flex;align-items:baseline;gap:4px;background:var(--card);border:1px solid #cdd5e0;border-radius:8px;padding:5px 9px;width:104px}
+  .field:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px rgba(47,127,184,.18)}
+  .field input{width:100%;min-width:0;border:0;outline:0;background:transparent;font-size:15px;font-weight:600;color:var(--text);text-align:right;padding:0;-moz-appearance:textfield}
+  .field input::-webkit-outer-spin-button,.field input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .field span{color:var(--sub);font-size:12.5px}
+  input[type=range]{width:100%;margin:8px 0 0;accent-color:var(--blue);height:18px}
+  .scale{display:flex;justify-content:space-between;font-size:10.5px;color:var(--faint);margin-top:-1px}
+
+  /* cards */
+  .card{background:var(--card);border:1px solid var(--edge);border-radius:12px;padding:12px 14px;margin-top:12px}
+  .k{font-size:11px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+  .row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:13.5px;padding:4px 0}
+  .row > span{color:var(--sub)}
+  .row > b > span{color:inherit}
+  .row > b{font-weight:600;text-align:right}
+  .big{font-size:28px;font-weight:700;letter-spacing:-.02em;line-height:1.15;margin-top:2px}
+  .big small{font-size:14px;font-weight:600;color:var(--sub);letter-spacing:0}
+  .ok{color:var(--green)} .warn{color:var(--amber)} .bad{color:var(--red)}
+  .note{font-size:11.5px;color:var(--sub);margin:8px 0 0;line-height:1.4}
+  .spacer{flex:1;min-height:14px}
+
+  /* capex bar */
+  .stack{display:flex;height:9px;border-radius:5px;overflow:hidden;margin:9px 0 8px;gap:2px}
+  .stack i{display:block;min-width:2px}
+  .legend{display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;font-size:11.5px;color:var(--sub)}
+  .legend span{display:flex;align-items:center;gap:6px;white-space:nowrap}
+  .legend span::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--c);flex:none}
+  .legend b{margin-left:auto;color:var(--text);font-weight:600}
+
+  /* verdict + buttons */
+  .verdict{display:flex;gap:9px;align-items:flex-start;border-radius:10px;padding:10px 12px;font-size:12.5px;margin-top:12px;line-height:1.4}
+  .verdict.yes{background:#e2f1e9;color:#14573a}
+  .verdict.no{background:#fbe9e7;color:#8f2a23}
+  .verdict svg{flex:none;margin-top:1px}
+  .btn{display:block;width:100%;border:0;border-radius:11px;padding:13px;font-size:14.5px;font-weight:600;color:#fff;cursor:pointer;background:var(--navy);transition:filter .15s,transform .05s}
+  .btn:hover:not(:disabled){filter:brightness(1.12)}
+  .btn:active:not(:disabled){transform:translateY(1px)}
+  .btn.go{background:var(--green)}
+  .btn:disabled{background:#a3abb9;cursor:not-allowed}
+  :focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+
+  /* score */
+  .scorehead{display:flex;justify-content:space-between;align-items:baseline}
+  .scorehead .n{font-size:30px;font-weight:800;color:#c8571f;letter-spacing:-.02em;line-height:1}
+  .scorehead .n small{font-size:13px;color:var(--sub);font-weight:600}
+  .fac{margin-top:9px}
+  .fac .t{display:flex;justify-content:space-between;font-size:12px;color:var(--sub)}
+  .fac .t b{font-family:var(--mono);font-weight:500;font-size:11px;color:var(--faint)}
+  .track{height:5px;background:#e4e8ef;border-radius:3px;margin-top:4px;overflow:hidden}
+  .track i{display:block;height:100%;background:var(--accent);border-radius:3px;transition:width .25s}
+
+  /* stress test */
+  .chips{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:9px}
+  .chips button{border:1px solid #cdd5e0;background:#fff;color:var(--sub);border-radius:8px;padding:7px 6px;font-size:12px;cursor:pointer;line-height:1.2}
+  .chips button[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:600}
+  .dscr{display:flex;justify-content:space-between;align-items:baseline;margin-top:12px}
+  .dscr .x{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1}
+  .dscr .st{font-size:12px;font-weight:600}
+  .gauge{position:relative;height:8px;background:#e4e8ef;border-radius:4px;margin:9px 0 24px}
+  .gauge i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;transition:width .3s}
+  .gauge i.ok{background:var(--green)} .gauge i.warn{background:var(--amber)} .gauge i.bad{background:var(--red)}
+  .gauge em{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--text);left:40%}
+  .gauge em::after{content:"bank min 1.20×";position:absolute;top:14px;left:50%;transform:translateX(-50%);font-style:normal;font-size:10.5px;color:var(--sub);white-space:nowrap}
+
+  /* dashboard */
+  .bars{display:flex;align-items:flex-end;gap:4px;height:58px;margin-top:10px}
+  .bars i{flex:1;background:#a9cbe6;border-radius:2px 2px 0 0}
+  .bars i:last-child{background:var(--blue)}
+  .months{display:flex;gap:4px;font-size:9.5px;color:var(--faint);margin-top:4px}
+  .months span{flex:1;text-align:center}
+  .prog{height:6px;background:#e4e8ef;border-radius:3px;margin:8px 0 6px;overflow:hidden}
+  .prog i{display:block;height:100%;background:var(--green);border-radius:3px}
+  .duo{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--edge)}
+  .duo b{display:block;font-size:15px;font-weight:700}
+  .duo span{font-size:11.5px;color:var(--sub)}
+  .verified{display:flex;align-items:center;justify-content:center;gap:7px;font-size:12px;color:var(--green);font-weight:500;margin:0}
+  .toast{background:#e2f1e9;color:#14573a;border-radius:10px;padding:9px 12px;font-size:12.5px;margin-top:12px;display:none}
+  .toast.on{display:block}
+
+  /* assumptions */
+  details{margin-top:30px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+  summary{cursor:pointer;padding:14px 18px;font-weight:600;font-size:14.5px;list-style:none;display:flex;justify-content:space-between;align-items:center}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+";font-family:var(--mono);color:var(--accent);font-size:18px}
+  details[open] summary::after{content:"−"}
+  .assump{padding:0 18px 16px}
+  .assump p{color:var(--mute);font-size:13.5px;margin:0 0 12px;max-width:760px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:0 28px}
+  .grid div{display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:7px 0;border-top:1px solid var(--line)}
+  .grid span{color:var(--mute)}
+  .grid b{font-weight:600;white-space:nowrap}
+  .grid small{color:var(--accent);font-family:var(--mono);font-size:10px;margin-left:6px;font-weight:400}
+
+  footer{margin-top:26px;color:var(--mute);font-size:12.5px;display:flex;justify-content:space-between;gap:10px 24px;flex-wrap:wrap}
+  footer b{color:var(--ink);font-weight:600}
+
+  @media (max-width:1000px){
+    .wrap{padding:22px 14px 36px}
+    .head{margin-bottom:12px}
+    .tabs{display:flex}
+    .phones{display:block}
+    .col{display:none}
+    .col.active{display:flex}
+    .who{display:none}
+    .phone{border-width:0;border-radius:20px;padding:16px 14px;box-shadow:none;max-width:460px;width:100%;margin:0 auto}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="head">
+    <div>
+      <div class="eyebrow">HeatLoop · Prototype</div>
+      <h1>From eligibility check to repayment, in three screens.</h1>
+      <p class="lead">Move the sliders in the first screen. The investment, the credit score and the dashboard follow, using the formulas of our financial model.</p>
+    </div>
+    <span class="pill">Example data only</span>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Screens">
+    <button role="tab" aria-selected="true" data-tab="0">1 · Eligibility</button>
+    <button role="tab" aria-selected="false" data-tab="1">2 · Project</button>
+    <button role="tab" aria-selected="false" data-tab="2">3 · Dashboard</button>
+  </div>
+
+  <main class="phones">
+    <!-- 1 · operator -->
+    <section class="col active" data-col="0" aria-label="Eligibility check">
+      <div class="who"><i>1</i>Data center operator</div>
+      <div class="phone">
+        <div class="appbar"><span class="logo">HeatLoop</span><span class="tag">Operator</span></div>
+        <h2>Eligibility check</h2>
+        <p class="sub">Is your waste heat worth financing?</p>
+
+        <div class="inp">
+          <div class="top"><label for="it">IT power</label>
+            <div class="field"><input id="it" type="number" step="0.5" inputmode="decimal"><span>MW</span></div></div>
+          <input id="it-r" type="range" aria-label="IT power">
+          <div class="scale"><span>1</span><span>20 MW</span></div>
+        </div>
+        <div class="inp">
+          <div class="top"><label for="temp">Heat temperature</label>
+            <div class="field"><input id="temp" type="number" step="1" inputmode="numeric"><span>°C</span></div></div>
+          <input id="temp-r" type="range" aria-label="Heat temperature">
+          <div class="scale"><span>15</span><span>60 °C</span></div>
+        </div>
+        <div class="inp">
+          <div class="top"><label for="dist">Distance to buyer</label>
+            <div class="field"><input id="dist" type="number" step="50" inputmode="numeric"><span>m</span></div></div>
+          <input id="dist-r" type="range" aria-label="Distance to buyer">
+          <div class="scale"><span>100</span><span>3 000 m</span></div>
+        </div>
+
+        <div class="card">
+          <div class="row"><span>Heat sold / yr</span><b id="o-heat"></b></div>
+          <div class="row"><span>Payback</span><b id="o-payback"></b></div>
+          <div class="row"><span>Investment</span><b id="o-capex"></b></div>
+          <div class="stack" id="o-stack" aria-hidden="true"></div>
+          <div class="legend" id="o-legend"></div>
+        </div>
+
+        <div class="verdict" id="o-verdict" role="status"></div>
+        <div class="spacer"></div>
+        <button class="btn go" id="apply">Apply for financing</button>
+      </div>
+    </section>
+
+    <!-- 2 · financier -->
+    <section class="col" data-col="1" aria-label="Project page">
+      <div class="who"><i>2</i>Bank or investor</div>
+      <div class="phone">
+        <div class="appbar"><span class="logo">HeatLoop</span><span class="tag">Financier</span></div>
+        <h2>Project page</h2>
+        <p class="sub">Nordic Server AS → land-based fish farm</p>
+
+        <div class="card">
+          <div class="scorehead"><span class="k">HeatLoop score</span><span class="n"><span id="o-score"></span><small>/100</small></span></div>
+          <div id="o-factors"></div>
+        </div>
+
+        <div class="card">
+          <div class="row"><span>Contract</span><b>15 years · NOK 250/MWh</b></div>
+          <div class="row"><span>Min. payment</span><b>80% of volume</b></div>
+          <div class="row"><span>Loan</span><b id="o-loan"></b></div>
+        </div>
+
+        <div class="card">
+          <div class="k">Stress test · DSCR, year 1</div>
+          <div class="chips" id="chips" role="group" aria-label="Stress scenario"></div>
+          <div class="dscr"><span class="x" id="o-x"></span><span class="st" id="o-st"></span></div>
+          <div class="gauge"><i id="o-g"></i><em></em></div>
+          <p class="note" id="o-snote"></p>
+        </div>
+
+        <div class="spacer"></div>
+        <button class="btn" id="commit">Commit capital</button>
+      </div>
+    </section>
+
+    <!-- 3 · dashboard -->
+    <section class="col" data-col="2" aria-label="Dashboard">
+      <div class="who"><i>3</i>Financier and data center</div>
+      <div class="phone">
+        <div class="appbar"><span class="logo">HeatLoop</span><span class="tag live">● Live meter</span></div>
+        <h2>Dashboard</h2>
+        <p class="sub">Year 2 of operation · October</p>
+        <div class="toast" id="toast" role="status">Commitment recorded (demo). This is what you would follow once the plant runs.</div>
+
+        <div class="card">
+          <div class="k">Heat recovered this month</div>
+          <div class="big"><span id="o-month"></span> <small>MWh</small></div>
+          <div class="bars" id="o-bars" aria-hidden="true"></div>
+          <div class="months"><span>J</span><span>F</span><span>M</span><span>A</span><span>M</span><span>J</span><span>J</span><span>A</span><span>S</span><span>O</span></div>
+        </div>
+
+        <div class="card">
+          <div class="k">Electricity freed, year to date</div>
+          <div class="big"><span id="o-ytd"></span> <small>GWh</small></div>
+          <div class="duo">
+            <div><b id="o-homes"></b><span>homes powered, full year</span></div>
+            <div><b id="o-co2"></b><span>t CO₂ avoided per year</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="k">Loan</div>
+          <div class="prog"><i id="o-prog"></i></div>
+          <div class="row"><span>Repaid to date</span><b id="o-repaid"></b></div>
+          <div class="row"><span>Outstanding</span><b id="o-out"></b></div>
+          <div class="row"><span>Next payment · 15 Dec</span><b id="o-ds"></b></div>
+          <div class="row"><span>DSCR, last year</span><b id="o-dl"></b></div>
+        </div>
+
+        <div class="spacer"></div>
+        <p class="verified"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="7.25" stroke="currentColor" stroke-width="1.5"/><path d="M5 8.2l2.1 2.1L11 6.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Meter data verified by independent verifier</p>
+      </div>
+    </section>
+  </main>
+
+  <details>
+    <summary>Behind the numbers: the assumptions of the model</summary>
+    <div class="assump">
+      <p>Every figure above is computed in your browser from the assumptions of the HeatLoop financial model (Excel). With the default inputs, the screens show the typical project of our pitch.</p>
+      <div class="grid">
+        <div><span>IT power recovered as heat</span><b>80%<small>EST</small></b></div>
+        <div><span>Heat the buyer actually takes</span><b>60%<small>EST</small></b></div>
+        <div><span>Pipe, incl. groundworks</span><b>NOK 12,000/m<small>SWECO</small></b></div>
+        <div><span>Substation, per MW of heat</span><b>NOK 0.4m<small>SWECO</small></b></div>
+        <div><span>Connection and meters</span><b>NOK 3.3m<small>EST</small></b></div>
+        <div><span>Engineering / contingency</span><b>25% / 7.5%<small>SWECO</small></b></div>
+        <div><span>Heat price, year 1</span><b>NOK 250/MWh<small>EST</small></b></div>
+        <div><span>Share paid to the data centre</span><b>10%<small>EST</small></b></div>
+        <div><span>Operation and maintenance</span><b>NOK 50/MWh<small>SWECO</small></b></div>
+        <div><span>Admin and monitoring</span><b>NOK 0.45m/yr<small>EST</small></b></div>
+        <div><span>Debt share</span><b>70%<small>EST</small></b></div>
+        <div><span>Interest rate (NIBOR + 2%)</span><b>6.75%<small>NORGES BANK</small></b></div>
+        <div><span>Loan tenor</span><b>12 years<small>EST</small></b></div>
+        <div><span>Take-or-pay floor</span><b>80%<small>EST</small></b></div>
+        <div><span>Bank minimum DSCR</span><b>1.20×<small>EST</small></b></div>
+        <div><span>Buyer search radius</span><b>2 km<small>NVE</small></b></div>
+        <div><span>Household electricity use</span><b>14,700 kWh<small>SSB</small></b></div>
+        <div><span>CO₂ factor, Norway / EU</span><b>9.4 / 213 g/kWh<small>NVE · EMBER</small></b></div>
+      </div>
+    </div>
+  </details>
+
+  <footer>
+    <span><b>HeatLoop</b> · GRA6559 Fintech · BI Norwegian Business School · Fall 2026</span>
+    <span>Illustrative prototype. No real project, customer or meter data.</span>
+  </footer>
+</div>
+
+<script>
+/* Assumptions: same names and values as the "Assumptions" sheet of the HeatLoop model. */
+const A = {
+  Op_Hours:8760, Capture:0.8, Buyer_Share:0.6,
+  Pipe_Cost:12000, Substation_Cost:0.4, DC_Connection:3, Metering:0.3, Soft_Costs:0.25, Contingency:0.075,
+  Heat_Price:250, Take_or_Pay:0.8, DC_Share:0.1, OM_Cost:50, Admin_Cost:0.2, Monitoring_Fee:0.25,
+  Gearing:0.7, Int_Rate:0.0675, Loan_Tenor:12, DSCR_Min:1.2,
+  Elec_per_Heat:1, EF_NO:9.4, EF_EU:213, Household_Use:14700,
+  Max_Distance:2000, Min_Temp:20          // screening rules: NVE 2 km radius; direct use of low-temperature heat
+};
+const LIMITS = { it:[1,20,5], temp:[15,60,30], dist:[100,3000,800] };   // min, max, default
+const SCENARIOS = [
+  { name:'Base case',           avail:1,   top:false, price:1,   extra:0,    note:'Contracted volume, price and rate as planned.' },
+  { name:'Buyer −40%', avail:0.6, top:true,  price:1,   extra:0,    note:'The buyer takes 40% less heat. Take-or-pay: it still pays for 80% of the contracted volume.' },
+  { name:'Supply −30%',         avail:0.7, top:false, price:1,   extra:0,    note:'The data centre delivers 30% less heat and does not guarantee supply. This is the risk we price.' },
+  { name:'Combined shock',      avail:0.7, top:false, price:0.8, extra:0.02, note:'Supply −30%, price −20% and interest rate +2 pp, all at once.' }
+];
+/* Monthly profile for the dashboard (example). Ten months that average 1.00, so year-to-date ties to the model. */
+const PROFILE = [0.97,1.03,1.05,0.98,0.96,1.02,0.94,1.01,1.04,1.00];
+
+const pmt = (r,n,pv) => pv*r/(1-Math.pow(1+r,-n));
+
+function model(itLoad, distance){
+  const pipe  = distance*A.Pipe_Cost/1e6;
+  const equip = itLoad*A.Capture*A.Substation_Cost + A.DC_Connection + A.Metering;
+  const soft  = A.Soft_Costs*equip;
+  const cont  = A.Contingency*(pipe+equip+soft);
+  const capex = pipe+equip+soft+cont;                                    // NOK m
+  const heat  = itLoad*A.Capture*A.Buyer_Share*A.Op_Hours;               // MWh per year
+  const debt  = capex*A.Gearing;
+  const stress = s => {                                                  // year 1, as in the Project sheet
+    const billed = s.top ? Math.max(s.avail, A.Take_or_Pay) : s.avail;
+    const cfads = heat*billed*A.Heat_Price*s.price/1e6*(1-A.DC_Share)
+                - heat*s.avail*A.OM_Cost/1e6 - A.Admin_Cost - A.Monitoring_Fee;
+    const ds = pmt(A.Int_Rate+s.extra, A.Loan_Tenor, debt);
+    return { cfads, ds, x: cfads/ds };
+  };
+  const base = stress(SCENARIOS[0]);
+  return { pipe, equip, soft, cont, capex, heat, debt, base, stress,
+           payback: capex/base.cfads, principalY1: base.ds - debt*A.Int_Rate };
+}
+
+/* Score: weights from the pitch. The distance factor follows the input; the other four are example scores. */
+function score(distance){
+  const d = Math.max(0, Math.min(100, 100 - distance/A.Max_Distance*37.5));
+  const f = [['Heat sale contract',30,90],['Data centre load stability',25,60],['Buyer reliability',20,75],
+             ['Distance and infrastructure cost',15,d],['Technical quality and verification',10,80]];
+  return { f, total: f.reduce((s,[,w,v]) => s + w*v/100, 0) };
+}
+
+const $ = id => document.getElementById(id);
+const fmt  = (n,d=1) => n.toLocaleString('en-GB',{minimumFractionDigits:d,maximumFractionDigits:d});
+const thin = n => Math.round(n).toLocaleString('en-GB').replace(/,/g,' ');
+const tone = x => x >= A.DSCR_Min ? (x >= 1.5 ? 'ok' : 'warn') : 'bad';
+const ICON = { yes:'<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="7.25" stroke="currentColor" stroke-width="1.5"/><path d="M5 8.2l2.1 2.1L11 6.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+               no:'<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="7.25" stroke="currentColor" stroke-width="1.5"/><path d="M8 4.6v4.2M8 11.2v.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>' };
+
+const state = { it:5, temp:30, dist:800, scenario:0 };
+
+function render(){
+  const m = model(state.it, state.dist), s = score(state.dist);
+
+  /* 1 · eligibility */
+  const why = [];
+  if (state.dist > A.Max_Distance) why.push('the buyer is more than 2 km away');
+  if (state.temp < A.Min_Temp)     why.push('the heat is too cold to use without a heat pump');
+  if (m.base.x < A.DSCR_Min)       why.push('the heat sold does not cover the loan (DSCR ' + fmt(m.base.x,2) + '×, minimum 1.20×)');
+  const ok = why.length === 0;
+  $('o-heat').textContent    = fmt(m.heat/1000, m.heat < 10000 ? 1 : 0) + ' GWh';
+  $('o-payback').textContent = m.base.cfads > 0 && m.payback < 40 ? fmt(m.payback) + ' years' : 'not repaid';
+  $('o-capex').textContent   = 'NOK ' + fmt(m.capex) + 'm';
+  const parts = [['Pipe',m.pipe,'#1f3a5f'],['Equipment',m.equip,'#2f7fb8'],['Engineering',m.soft,'#9cc4e4'],['Contingency',m.cont,'#f0a472']];
+  $('o-stack').innerHTML  = parts.map(([,v,c]) => `<i style="flex:${v};background:${c}"></i>`).join('');
+  $('o-legend').innerHTML = parts.map(([n,v,c]) => `<span style="--c:${c}">${n}<b>${fmt(v)}</b></span>`).join('');
+  const v = $('o-verdict');
+  v.className = 'verdict ' + (ok ? 'yes' : 'no');
+  v.innerHTML = (ok ? ICON.yes : ICON.no) + '<span>' + (ok
+    ? `<b>Eligible.</b> Heat at ${state.temp} °C can go straight to the buyer, and the cash flow covers the loan ${fmt(m.base.x,2)}×.`
+    : '<b>Not eligible yet:</b> ' + why.join('; ') + '.') + '</span>';
+  $('apply').disabled = !ok;
+
+  /* 2 · project page */
+  $('o-score').textContent = Math.round(s.total);
+  $('o-factors').innerHTML = s.f.map(([n,w,val]) =>
+    `<div class="fac"><div class="t"><span>${n}</span><b>${w}%</b></div><div class="track"><i style="width:${val}%"></i></div></div>`).join('');
+  $('o-loan').textContent = `NOK ${fmt(m.debt)}m · 12 yrs · 6.75%`;
+  const sc = SCENARIOS[state.scenario], r = m.stress(sc), t = tone(r.x);
+  document.querySelectorAll('#chips button').forEach((b,i) => b.setAttribute('aria-pressed', i === state.scenario));
+  $('o-x').textContent = fmt(r.x,2) + '×';  $('o-x').className = 'x ' + t;
+  $('o-st').textContent = r.x >= A.DSCR_Min ? 'Above bank minimum' : 'Below bank minimum';  $('o-st').className = 'st ' + t;
+  const g = $('o-g');
+  g.style.width = Math.max(0, Math.min(100, r.x/3*100)) + '%';
+  g.className = t;
+  $('o-snote').textContent = `${sc.note} Cash flow NOK ${fmt(r.cfads,2)}m against debt service NOK ${fmt(r.ds,2)}m.`;
+  $('commit').disabled = !ok;
+  $('commit').textContent = ok ? 'Commit capital' : 'Project did not pass screening';
+
+  /* 3 · dashboard: October of year 2, one annual payment made */
+  const monthly = m.heat/12;
+  $('o-month').textContent = thin(Math.round(monthly*PROFILE[9]/10)*10);
+  $('o-bars').innerHTML = PROFILE.map(p => `<i style="height:${p/1.08*100}%"></i>`).join('');
+  $('o-ytd').textContent   = fmt(monthly*PROFILE.reduce((a,b) => a+b, 0)*A.Elec_per_Heat/1000);
+  $('o-homes').textContent = '≈ ' + thin(Math.round(m.heat*A.Elec_per_Heat*1000/A.Household_Use/10)*10);
+  $('o-co2').textContent   = thin(m.heat*A.EF_NO/1000) + ' to ' + thin(m.heat*A.EF_EU/1000);
+  $('o-repaid').textContent = 'NOK ' + fmt(m.principalY1,2) + 'm';
+  $('o-out').textContent    = 'NOK ' + fmt(m.debt - m.principalY1,2) + 'm';
+  $('o-ds').textContent     = 'NOK ' + fmt(m.base.ds,2) + 'm';
+  $('o-dl').innerHTML = `<span class="${tone(m.base.x)}">${fmt(m.base.x,2)}×</span>`;
+  $('o-prog').style.width   = Math.max(1.5, m.principalY1/m.debt*100) + '%';
+}
+
+function show(i){
+  document.querySelectorAll('.col').forEach(c => c.classList.toggle('active', +c.dataset.col === i));
+  document.querySelectorAll('.tabs button').forEach(t => t.setAttribute('aria-selected', +t.dataset.tab === i));
+  if (window.matchMedia('(max-width:1000px)').matches) window.scrollTo({ top:0 });
+}
+
+/* inputs: slider and number field stay in sync; out-of-range typing is clamped on blur */
+for (const id of Object.keys(LIMITS)){
+  const [lo, hi, def] = LIMITS[id], n = $(id), r = $(id + '-r');
+  n.min = r.min = lo; n.max = r.max = hi; r.step = n.step; n.value = r.value = state[id] = def;
+  r.addEventListener('input', () => { state[id] = +r.value; n.value = r.value; render(); });
+  n.addEventListener('input', () => { const v = parseFloat(n.value); if (isFinite(v)) { state[id] = Math.min(hi, Math.max(lo, v)); r.value = state[id]; render(); } });
+  n.addEventListener('blur',  () => { n.value = state[id]; });
+}
+$('chips').innerHTML = SCENARIOS.map((s,i) => `<button type="button" data-i="${i}">${s.name}</button>`).join('');
+$('chips').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { state.scenario = +b.dataset.i; render(); } });
+document.querySelectorAll('.tabs button').forEach(t => t.addEventListener('click', () => show(+t.dataset.tab)));
+document.querySelectorAll('.col').forEach(c => c.addEventListener('pointerdown', () => { if (!window.matchMedia('(max-width:1000px)').matches) show(+c.dataset.col); }));
+$('apply').addEventListener('click', () => show(1));
+$('commit').addEventListener('click', () => { $('toast').classList.add('on'); show(2); });
+render();
+</script>
+</body>
+</html>
